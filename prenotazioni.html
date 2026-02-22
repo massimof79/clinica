@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Elenco prenotazioni - Clinica</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #bbb; padding: 8px; vertical-align: top; }
+    th { text-align: left; }
+    .muted { color: #555; font-size: 0.95em; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <h2>Elenco prenotazioni</h2>
+  <p class="muted">Dati caricati da <code>api_prenotazioni_list.php</code> (JOIN tra PRENOTAZIONI, PAZIENTI, MEDICI, AMBULATORI).</p>
+
+  <p id="status" class="muted">Caricamento...</p>
+
+  <table id="tbl" aria-label="Tabella prenotazioni">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Data/Ora</th>
+        <th>Stato</th>
+        <th>Paziente</th>
+        <th>Medico</th>
+        <th>Ambulatorio</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+async function loadPrenotazioni() {
+  const status = document.getElementById("status");
+  const tbody = document.querySelector("#tbl tbody");
+
+  tbody.innerHTML = "";
+  status.textContent = "Caricamento...";
+
+  try {
+    const res = await fetch("api_prenotazioni_list.php", { method: "GET" });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error((data && data.error) ? data.error : "Richiesta non riuscita");
+    }
+
+    status.textContent = "Record trovati: " + data.count;
+
+    for (const r of data.data) {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${escapeHtml(r.prenotazione_id)}</td>
+        <td>${escapeHtml(r.data_ora)}</td>
+        <td>${escapeHtml(r.stato)}</td>
+        <td>
+          <div><strong>${escapeHtml(r.paziente_cognome)} ${escapeHtml(r.paziente_nome)}</strong></div>
+          <div class="muted">${escapeHtml(r.paziente_email)}</div>
+        </td>
+        <td>
+          <div><strong>${escapeHtml(r.medico_cognome)} ${escapeHtml(r.medico_nome)}</strong></div>
+          <div class="muted">${escapeHtml(r.specializzazione)}</div>
+        </td>
+        <td>
+          <div><strong>${escapeHtml(r.ambulatorio_nome)}</strong></div>
+          <div class="muted">${escapeHtml(r.ambulatorio_citta)}</div>
+        </td>
+        <td>${r.note === null ? "" : escapeHtml(r.note)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+  } catch (err) {
+    status.innerHTML = '<span class="error">Errore: ' + escapeHtml(err.message) + "</span>";
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+loadPrenotazioni();
+</script>
+</body>
+</html>
