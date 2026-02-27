@@ -27,29 +27,23 @@ th,td { border:1px solid #bbb; padding:6px }
 </table>
 
 <script>
-function esc(s){
-  return String(s||"").replace(/[&<>"']/g,c=>(
-    {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]
-  ));
-}
-
 fetch("api_prenotazioni_list.php")
 .then(r=>r.json().then(d=>{
   if(!r.ok || !d.ok) throw Error(d.error||"Errore");
   document.getElementById("status").textContent="Record: "+d.count;
   document.getElementById("body").innerHTML = d.data.map(x=>`
     <tr>
-      <td>${esc(x.prenotazione_id)}</td>
-      <td>${esc(x.data_ora)}</td>
-      <td>${esc(x.stato)}</td>
-      <td><b>${esc(x.paziente_cognome)} ${esc(x.paziente_nome)}</b><div class="muted">${esc(x.paziente_email)}</div></td>
-      <td><b>${esc(x.medico_cognome)} ${esc(x.medico_nome)}</b><div class="muted">${esc(x.specializzazione)}</div></td>
-      <td><b>${esc(x.ambulatorio_nome)}</b><div class="muted">${esc(x.ambulatorio_citta)}</div></td>
-      <td>${esc(x.note)}</td>
+      <td>${x.prenotazione_id}</td>
+      <td>${x.data_ora}</td>
+      <td>${x.stato}</td>
+      <td><b>${x.paziente_cognome} ${x.paziente_nome}</b><div class="muted">${x.paziente_email}</div></td>
+      <td><b>${x.medico_cognome} ${x.medico_nome}</b><div class="muted">${x.specializzazione}</div></td>
+      <td><b>${x.ambulatorio_nome}</b><div class="muted">${x.ambulatorio_citta}</div></td>
+      <td>${x.note || ""}</td>
     </tr>
   `).join("");
 }))
-.catch(e=>{
+.catch(()=>{
   document.getElementById("status").innerHTML="<span class='error'>Errore</span>";
 });
 </script>
