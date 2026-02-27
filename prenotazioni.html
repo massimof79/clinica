@@ -1,95 +1,58 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Elenco prenotazioni - Clinica</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 18px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #bbb; padding: 8px; vertical-align: top; }
-    th { text-align: left; }
-    .muted { color: #555; font-size: 0.95em; }
-    .error { color: #b00020; }
-  </style>
+<meta charset="utf-8">
+<title>Elenco prenotazioni</title>
+<style>
+table { border-collapse: collapse; width:100% }
+th,td { border:1px solid #bbb; padding:6px }
+.muted { color:#555; font-size:.9em }
+.error { color:#b00020 }
+</style>
 </head>
 <body>
-  <h2>Elenco prenotazioni</h2>
-  <p class="muted">Dati caricati da <code>api_prenotazioni_list.php</code> (JOIN tra PRENOTAZIONI, PAZIENTI, MEDICI, AMBULATORI).</p>
 
-  <p id="status" class="muted">Caricamento...</p>
+<h2>Elenco prenotazioni</h2>
+<p id="status">Caricamento...</p>
 
-  <table id="tbl" aria-label="Tabella prenotazioni">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Data/Ora</th>
-        <th>Stato</th>
-        <th>Paziente</th>
-        <th>Medico</th>
-        <th>Ambulatorio</th>
-        <th>Note</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<table>
+<thead>
+<tr>
+<th>ID</th><th>Data/Ora</th><th>Stato</th>
+<th>Paziente</th><th>Medico</th>
+<th>Ambulatorio</th><th>Note</th>
+</tr>
+</thead>
+<tbody id="body"></tbody>
+</table>
 
 <script>
-(function () {
-  var statusEl = document.getElementById("status");
-  var tbody = document.querySelector("#tbl tbody");
+function esc(s){
+  return String(s||"").replace(/[&<>"']/g,c=>(
+    {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]
+  ));
+}
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c];
-    });
-  }
-
-  function td(v) { return "<td>" + esc(v == null ? "" : v) + "</td>"; }
-
-  function row(r) {
-    return "<tr>"
-      + td(r.prenotazione_id)
-      + td(r.data_ora)
-      + td(r.stato)
-      + "<td><div><strong>" + esc(r.paziente_cognome) + " " + esc(r.paziente_nome) + "</strong></div>"
-          + "<div class='muted'>" + esc(r.paziente_email) + "</div></td>"
-      + "<td><div><strong>" + esc(r.medico_cognome) + " " + esc(r.medico_nome) + "</strong></div>"
-          + "<div class='muted'>" + esc(r.specializzazione) + "</div></td>"
-      + "<td><div><strong>" + esc(r.ambulatorio_nome) + "</strong></div>"
-          + "<div class='muted'>" + esc(r.ambulatorio_citta) + "</div></td>"
-      + td(r.note)
-      + "</tr>";
-  }
-
-  function setError(msg) {
-    statusEl.innerHTML = "<span class='error'>Errore: " + esc(msg) + "</span>";
-  }
-
-  function load() {
-    tbody.innerHTML = "";
-    statusEl.textContent = "Caricamento...";
-
-    fetch("api_prenotazioni_list.php")
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok || !data || !data.ok) {
-            throw new Error((data && data.error) ? data.error : "Richiesta non riuscita");
-          }
-          return data;
-        });
-      })
-      .then(function (data) {
-        statusEl.textContent = "Record trovati: " + (data.count || 0);
-        tbody.innerHTML = (data.data || []).map(row).join("");
-      })
-      .catch(function (err) {
-        setError(err && err.message ? err.message : "Errore sconosciuto");
-      });
-  }
-
-  load();
-})();
+fetch("api_prenotazioni_list.php")
+.then(r=>r.json().then(d=>{
+  if(!r.ok || !d.ok) throw Error(d.error||"Errore");
+  document.getElementById("status").textContent="Record: "+d.count;
+  document.getElementById("body").innerHTML = d.data.map(x=>`
+    <tr>
+      <td>${esc(x.prenotazione_id)}</td>
+      <td>${esc(x.data_ora)}</td>
+      <td>${esc(x.stato)}</td>
+      <td><b>${esc(x.paziente_cognome)} ${esc(x.paziente_nome)}</b><div class="muted">${esc(x.paziente_email)}</div></td>
+      <td><b>${esc(x.medico_cognome)} ${esc(x.medico_nome)}</b><div class="muted">${esc(x.specializzazione)}</div></td>
+      <td><b>${esc(x.ambulatorio_nome)}</b><div class="muted">${esc(x.ambulatorio_citta)}</div></td>
+      <td>${esc(x.note)}</td>
+    </tr>
+  `).join("");
+}))
+.catch(e=>{
+  document.getElementById("status").innerHTML="<span class='error'>Errore</span>";
+});
 </script>
+
 </body>
 </html>
