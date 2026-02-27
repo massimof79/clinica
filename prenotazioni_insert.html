@@ -1,0 +1,98 @@
+<!-- prenotazioni_insert.html -->
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuova prenotazione</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:18px;max-width:720px}
+    label{display:block;margin:.6rem 0 .2rem}
+    input,select,textarea,button{width:100%;padding:.5rem;box-sizing:border-box}
+    textarea{min-height:90px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .ok{color:#0a6}
+    .err{color:#b00020}
+    small{color:#555}
+  </style>
+</head>
+<body>
+  <h2>Inserisci prenotazione</h2>
+  <small>Invio a <code>api_prenotazioni_insert.php</code></small>
+
+  <p id="msg"></p>
+
+  <form id="f">
+    <div class="row">
+      <div>
+        <label for="paziente_id">ID paziente</label>
+        <input id="paziente_id" name="paziente_id" type="number" min="1" required>
+      </div>
+      <div>
+        <label for="medico_id">ID medico</label>
+        <input id="medico_id" name="medico_id" type="number" min="1" required>
+      </div>
+    </div>
+
+    <label for="data_ora">Data e ora</label>
+    <input id="data_ora" name="data_ora" type="datetime-local" required>
+
+    <label for="stato">Stato</label>
+    <select id="stato" name="stato">
+      <option value="prenotata" selected>prenotata</option>
+      <option value="confermata">confermata</option>
+      <option value="annullata">annullata</option>
+      <option value="completata">completata</option>
+    </select>
+
+    <label for="note">Note (opzionale)</label>
+    <textarea id="note" name="note" maxlength="255" placeholder="Max 255 caratteri"></textarea>
+
+    <button type="submit">Salva</button>
+  </form>
+
+<script>
+(function () {
+  var f = document.getElementById("f");
+  var msg = document.getElementById("msg");
+
+  function show(text, ok){
+    msg.className = ok ? "ok" : "err";
+    msg.textContent = text;
+  }
+
+  function toMysqlDatetime(v){            // "YYYY-MM-DDTHH:MM" -> "YYYY-MM-DD HH:MM:00"
+    return v ? (v.replace("T"," ") + ":00") : "";
+  }
+
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    show("Invio...", true);
+
+    var payload = {
+      paziente_id: Number(f.paziente_id.value),
+      medico_id: Number(f.medico_id.value),
+      data_ora: toMysqlDatetime(f.data_ora.value),
+      stato: f.stato.value,
+      note: (f.note.value || "").trim()
+    };
+
+    fetch("api_prenotazioni_insert.php", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || !d.ok) throw new Error((d && d.error) ? d.error : "Errore");
+      show("Inserita prenotazione con id = " + d.id, true);
+      f.reset();
+    })
+    .catch(function(err){
+      show("Errore: " + (err && err.message ? err.message : "sconosciuto"), false);
+    });
+  });
+})();
+</script>
+</body>
+</html>
