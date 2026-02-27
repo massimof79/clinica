@@ -35,59 +35,61 @@
   </table>
 
 <script>
-async function loadPrenotazioni() {
-  const status = document.getElementById("status");
-  const tbody = document.querySelector("#tbl tbody");
+(function () {
+  var statusEl = document.getElementById("status");
+  var tbody = document.querySelector("#tbl tbody");
 
-  tbody.innerHTML = "";
-  status.textContent = "Caricamento...";
-
-  try {
-    const res = await fetch("api_prenotazioni_list.php", { method: "GET" });
-    const data = await res.json();
-
-    if (!res.ok || !data.ok) {
-      throw new Error((data && data.error) ? data.error : "Richiesta non riuscita");
-    }
-
-    status.textContent = "Record trovati: " + data.count;
-
-    for (const r of data.data) {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${escapeHtml(r.prenotazione_id)}</td>
-        <td>${escapeHtml(r.data_ora)}</td>
-        <td>${escapeHtml(r.stato)}</td>
-        <td>
-          <div><strong>${escapeHtml(r.paziente_cognome)} ${escapeHtml(r.paziente_nome)}</strong></div>
-          <div class="muted">${escapeHtml(r.paziente_email)}</div>
-        </td>
-        <td>
-          <div><strong>${escapeHtml(r.medico_cognome)} ${escapeHtml(r.medico_nome)}</strong></div>
-          <div class="muted">${escapeHtml(r.specializzazione)}</div>
-        </td>
-        <td>
-          <div><strong>${escapeHtml(r.ambulatorio_nome)}</strong></div>
-          <div class="muted">${escapeHtml(r.ambulatorio_citta)}</div>
-        </td>
-        <td>${r.note === null ? "" : escapeHtml(r.note)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-  } catch (err) {
-    status.innerHTML = '<span class="error">Errore: ' + escapeHtml(err.message) + "</span>";
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c];
+    });
   }
-}
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[c]));
-}
+  function td(v) { return "<td>" + esc(v == null ? "" : v) + "</td>"; }
 
-loadPrenotazioni();
+  function row(r) {
+    return "<tr>"
+      + td(r.prenotazione_id)
+      + td(r.data_ora)
+      + td(r.stato)
+      + "<td><div><strong>" + esc(r.paziente_cognome) + " " + esc(r.paziente_nome) + "</strong></div>"
+          + "<div class='muted'>" + esc(r.paziente_email) + "</div></td>"
+      + "<td><div><strong>" + esc(r.medico_cognome) + " " + esc(r.medico_nome) + "</strong></div>"
+          + "<div class='muted'>" + esc(r.specializzazione) + "</div></td>"
+      + "<td><div><strong>" + esc(r.ambulatorio_nome) + "</strong></div>"
+          + "<div class='muted'>" + esc(r.ambulatorio_citta) + "</div></td>"
+      + td(r.note)
+      + "</tr>";
+  }
+
+  function setError(msg) {
+    statusEl.innerHTML = "<span class='error'>Errore: " + esc(msg) + "</span>";
+  }
+
+  function load() {
+    tbody.innerHTML = "";
+    statusEl.textContent = "Caricamento...";
+
+    fetch("api_prenotazioni_list.php")
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok || !data || !data.ok) {
+            throw new Error((data && data.error) ? data.error : "Richiesta non riuscita");
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        statusEl.textContent = "Record trovati: " + (data.count || 0);
+        tbody.innerHTML = (data.data || []).map(row).join("");
+      })
+      .catch(function (err) {
+        setError(err && err.message ? err.message : "Errore sconosciuto");
+      });
+  }
+
+  load();
+})();
 </script>
 </body>
 </html>
