@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard prenotazioni</title>
+</head>
+<style>
+
+
+
+</style>
+<body>
+    <h1>Inserisci il cognome per cui hai prenotato</h1>
+    <form id="form">
+        <input type="text" required placeholder="Cognome" id="cognome">
+        <button type="submit">Inizia ricerca</button>
+    </form>
+    <div id="risultato"></div>
+</body>
+<script>
+    document.getElementById('form').addEventListener('submit', e => {
+    e.preventDefault();
+
+    let cognome = document.getElementById('cognome').value;
+    cognome=cognome.toLowerCase();
+
+    fetch('api_prenotazioni_list.php', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cognome: cognome })
+    })
+    .then(resp => resp.json())
+    .then(data => {
+
+        if (!Array.isArray(data) || data.length === 0) {
+            document.getElementById('risultato').innerHTML = "<p>Nessun risultato trovato.</p>";
+            return;
+        }
+
+        let html = `
+            <table border="1">
+                <tr>
+                    <th>ID Prenotazione</th>
+                    <th>Data</th>
+                    <th>Ora</th>
+                    <th>Paziente</th>
+                    <th>Medico</th>
+                    <th>Ambulatorio</th>
+                </tr>
+        `;
+
+        data.forEach(p => {
+            html += `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.data_prenotazione}</td>
+                    <td>${p.ora_prenotazione}</td>
+                    <td>${p.cognome_paziente} ${p.nome_paziente}</td>
+                    <td>${p.nome_medico} ${p.cognome_medico}</td>
+                    <td>${p.ambulatorio_nome} (${p.ambulatorio_citta})</td>
+                </tr>
+            `;
+        });
+
+        html += "</table>";
+
+        document.getElementById('risultato').innerHTML = html;
+
+        let resetBtn = document.createElement("button");
+        resetBtn.textContent = "Reset";
+        resetBtn.style.marginTop = "20px";
+        resetBtn.style.padding = "10px 18px";
+        resetBtn.style.background = "#e74c3c";
+        resetBtn.style.color = "white";
+        resetBtn.style.border = "none";
+        resetBtn.style.borderRadius = "6px";
+        resetBtn.style.cursor = "pointer";
+        resetBtn.style.fontSize = "16px";
+
+        resetBtn.addEventListener("click", () => {
+            document.getElementById('risultato').innerHTML = "";
+            document.getElementById('cognome').value = "";
+        });
+
+        document.getElementById('risultato').appendChild(resetBtn);
+        let menuBtn = document.createElement("button");
+        menuBtn.textContent = "Torna al menù principale";
+        menuBtn.style.marginTop = "15px";
+        menuBtn.style.padding = "10px 18px";
+        menuBtn.style.background = "#34495e";
+        menuBtn.style.color = "white";
+        menuBtn.style.border = "none";
+        menuBtn.style.borderRadius = "6px";
+        menuBtn.style.cursor = "pointer";
+        menuBtn.style.fontSize = "16px";
+        menuBtn.style.display = "block";
+
+        menuBtn.addEventListener("click", () => {
+            window.location.href = "index.html";
+        });
+
+        document.getElementById('risultato').appendChild(menuBtn);
+
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById('risultato').innerHTML = '<h2>Errore nella ricerca delle informazioni</h2>';
+    });
+});
+
+</script>
+</html>
