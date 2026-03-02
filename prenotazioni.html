@@ -30,18 +30,27 @@ th,td { border:1px solid #bbb; padding:6px }
 fetch("api_prenotazioni_list.php")
 .then(r=>r.json().then(d=>{
   if(!r.ok || !d.ok) throw Error(d.error||"Errore");
-  document.getElementById("status").textContent="Record: "+d.count;
-  document.getElementById("body").innerHTML = d.data.map(x=>`
-    <tr>
-      <td>${x.prenotazione_id}</td>
-      <td>${x.data_ora}</td>
-      <td>${x.stato}</td>
-      <td><b>${x.paziente_cognome} ${x.paziente_nome}</b><div class="muted">${x.paziente_email}</div></td>
-      <td><b>${x.medico_cognome} ${x.medico_nome}</b><div class="muted">${x.specializzazione}</div></td>
-      <td><b>${x.ambulatorio_nome}</b><div class="muted">${x.ambulatorio_citta}</div></td>
-      <td>${x.note || ""}</td>
-    </tr>
-  `).join("");
+
+  document.getElementById("status").textContent = "Record: " + d.count;
+
+  var html = "";
+  for (var i = 0; i < d.data.length; i++) {
+    var x = d.data[i];
+    html += "<tr>" +
+      "<td>" + x.prenotazione_id + "</td>" +
+      "<td>" + x.data_ora + "</td>" +
+      "<td>" + x.stato + "</td>" +
+      "<td><b>" + x.paziente_cognome + " " + x.paziente_nome + "</b>" +
+      "<div class='muted'>" + x.paziente_email + "</div></td>" +
+      "<td><b>" + x.medico_cognome + " " + x.medico_nome + "</b>" +
+      "<div class='muted'>" + x.specializzazione + "</div></td>" +
+      "<td><b>" + x.ambulatorio_nome + "</b>" +
+      "<div class='muted'>" + x.ambulatorio_citta + "</div></td>" +
+      "<td>" + (x.note ? x.note : "") + "</td>" +
+    "</tr>";
+  }
+
+  document.getElementById("body").innerHTML = html;
 }))
 .catch(()=>{
   document.getElementById("status").innerHTML="<span class='error'>Errore</span>";
